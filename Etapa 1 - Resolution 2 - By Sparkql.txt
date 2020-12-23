@@ -1,0 +1,20 @@
+## Resolution 2 by Spark.sql ## 
+
+-- CRIANDO COMANDO DE CONEXÃO COM O BANCO
+val url = "jdbc:postgresql://localhost:5432/coopivara?user=postgres&password=postgres"
+import java.util.Properties
+val connectionProperties = new Properties()
+connectionProperties.setProperty("Driver", "org.postgresql.Driver")
+
+-- CRIANDO DF COM RESULTADO SOLICITADO
+val movimento_flat = "(select associado.nome,associado.SORBENOME,associado.idade,movimento.vlr_transacao,movimento.des_transacao,movimento.data_movimento,cartao.num_cartao,cartao.nom_impresso,cartao.data_criacao_cartao,conta.tipo,conta.data_criacao FROM associado LEFT JOIN conta on (conta.idassociado = associado.idassociado) LEFT JOIN CARTAO on (CARTAO.IDCONTA = CONTA.IDCONTA) LEFT JOIN MOVIMENTO on (MOVIMENTO.IDCARTAO = CARTAO.IDCARTAO)) as associado"
+
+-- CONECTANDO AO BANCO E RECEBENDO RESULTADO DO SELECT
+val personDf = spark.read.jdbc(url, movimento_flat, connectionProperties)
+
+-- RESULTADO DA CONSULTA
+personDf.show()
+
+-- EXPORTAÇÃO DO RESULTADO
+-- USUÁRIO PODE INFORMAR DIRETORIO PARA EXPORTAÇÃO
+personDf.write.format("com.databricks.spark.csv").option("header","true").save("/home/well/movimento_flat.csv")` 

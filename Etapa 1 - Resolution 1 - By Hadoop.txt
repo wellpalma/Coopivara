@@ -1,0 +1,49 @@
+## Resolution 1 by Handoop ## 
+
+-- UTILIZAÇÃO DO SQOOP PARA TRANSFERIR OS DADOS DA DATABASE COOPIVARA PARA O HADOOP 
+-- CONEXÃO COM O POSTGRESS
+sqoop  import-all-tables  --connect jdbc:postgresql://127.0.0.1/coopivara --username postgres --password 123456
+
+-- ACESSANDO O HIVE
+beeline
+!connect jdbc:hive2://
+
+-- CRIANDO ESTRUTURA NO HADOOP/HIVE
+create database coopivara;
+
+-- CRIANDO TABLE E IMPORTANDO DADOS EXPORTADOS
+create table ASSOCIADO(IDASSOCIADO int, NOME string, SORBENOME string, IDADE int, EMAIL string) row format delimited fields terminated by ',' location '/user/cloudera/associado/';
+
+-- CRIANDO TABLE E IMPORTANDO DADOS EXPORTADOS
+create table CONTA(IDCONTA int, TIPO string, DATA_CRIACAO date, IDASSOCIADO int) row format delimited fields terminated by ',' location '/user/cloudera/conta/';
+
+-- CRIANDO TABLE E IMPORTANDO DADOS EXPORTADOS
+create table CARTAO(IDCARTAO int, NUM_CARTAO int, NOM_IMPRESSO string, data_criacao_cartao date, IDCONTA int, IDASSOCIADO int) row format delimited fields terminated by ',' location '/user/cloudera/cartao/';
+
+-- CRIANDO TABLE E IMPORTANDO DADOS EXPORTADOS
+create table MOVIMENTO(IDMOVIMENTO int, VLR_TRANSACAO float, DES_TRANSACAO string, DATA_MOVIMENTO date, IDCARTAO int) row format delimited fields terminated by ',' location '/user/cloudera/movimento/';
+
+-- CREADA VIEW PARA CONSULTA 
+create table movimento_flat as 
+Select associado.nome,
+associado.SORBENOME,
+associado.idade,
+movimento.vlr_transacao,
+movimento.des_transacao,
+movimento.data_movimento,
+cartao.num_cartao,
+cartao.nom_impresso,
+cartao.data_criacao_cartao,
+conta.tipo,
+conta.data_criacao
+FROM associado
+JOIN conta on conta.idassociado = associado.idassociado
+JOIN CARTAO on CARTAO.IDCONTA = CONTA.IDCONTA
+JOIN MOVIMENTO on MOVIMENTO.IDCARTAO = CARTAO.IDCARTAO;
+
+-- GERAÇÃO DO ARQUIVO CSV COM DADOS SOLICITADOS
+-- USUÁRIO PODE INFORMAR DIRETORIO PARA EXPORTAÇÃO
+insert overwrite local directory '/home/cloudera/file.csv' 
+row format delimited
+fields terminated by ','
+select * from movimento_flat;

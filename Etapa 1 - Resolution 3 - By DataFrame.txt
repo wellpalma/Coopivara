@@ -1,0 +1,33 @@
+## Resolution 3 by Spark Dataframe ## 
+
+
+-- CRIANDO SELECT NA TABELA ASSOCIADO
+val associado = "(select idassociado, nome, sorbenome, idade from associado) as associado"
+
+-- DESIGNANDO RESULTADO PARA VARIÁVEL
+val associadoDf = spark.read.jdbc(url, associado, connectionProperties)
+
+-- CRIANDO SELECT NA TABELA CONTA
+val conta = "(select tipo, data_criacao, idassociado, idconta from conta) as conta"
+
+-- DESIGNANDO RESULTADO PARA VARIÁVEL
+val contaDf = spark.read.jdbc(url, conta, connectionProperties)
+
+-- CRIANDO SELECT NA TABELA CARTAO
+val cartao = "(select num_cartao, nom_impresso, data_criacao_cartao, idconta, idassociado, idcartao from cartao) as cartao"
+
+-- DESIGNANDO RESULTADO PARA VARIÁVEL
+val cartaoDf = spark.read.jdbc(url, cartao, connectionProperties)
+
+-- CRIANDO SELECT NA TABELA MOVIMENTO
+val movimento = "(select idmovimento, idcartao, vlr_transacao, des_transacao, data_movimento from movimento) as movimento"
+
+-- DESIGNANDO RESULTADO PARA VARIÁVEL
+val movimentoDf = spark.read.jdbc(url, movimento, connectionProperties)
+
+-- AGREGANDO INFORMAÇÕES DAS TABELAS EM UMA SÓ VARIÁVEL
+val movimento_flat = associadoDf.join(contaDf,associadoDf("idassociado") === contaDf("idassociado"),"left" ).join(cartaoDf,contaDf("idconta") === cartaoDf("idconta"),"left").join(movimentoDf,cartaoDf("idcartao") === movimentoDf("idcartao"),"left")select($"nome",$"sorbenome",$"idade",$"vlr_transacao",$"des_transacao",$"data_movimento",$"num_cartao",$"nom_impresso",$"data_criacao_cartao",$"tipo",$"data_criacao")
+
+-- EXPORTAÇÃO DO RESULTADO
+-- USUÁRIO PODE INFORMAR DIRETORIO PARA EXPORTAÇÃO
+movimento_flat.write.format("com.databricks.spark.csv").option("header","true").save("/home/well/movimento_flat2.csv") 
